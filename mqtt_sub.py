@@ -6,21 +6,23 @@ import subprocess
 import threading
 import signal
 import time
+import toml
 import pickledb
 
 from paho.mqtt import client as mqtt_client
 
+data = toml.load("data.toml")
 db = pickledb.load('data.db', False, True)
 logging.basicConfig(level=logging.DEBUG, format="[%(module)s] %(message)s")
 logger = logging.getLogger(__name__)
 
 
-broker = 'lytko.com'
-port = 1883
-topic = "Grigory/domoticz/#"
+broker = data['default']['broker']
+port = data['default']['port']
+topic = data['default']['topic']
 client_id = f'python-mqtt-{random.randint(0, 100)}'
-username = 'Grigory'
-password = 'GrigoryPass'
+username = data['default']['username']
+password = data['default']['password']
 PID = []
 
 
