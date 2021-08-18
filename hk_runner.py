@@ -6,7 +6,12 @@ This is:
     setup a server to answer client queries, etc.
 """
 import logging
+import os
 import signal
+import subprocess
+import sys
+import time
+
 import pickledb
 
 from pyhap.accessory import Accessory, Bridge
@@ -15,8 +20,7 @@ import pyhap.loader as loader
 from pyhap import camera
 from pyhap.const import CATEGORY_SENSOR
 
-logging.basicConfig(level=logging.INFO, format="[%(module)s] %(message)s")
-db = pickledb.load('data.db', False, True)
+logging.basicConfig(level=logging.DEBUG, format="[%(module)s] %(message)s")
 
 
 class TemperatureSensor(Accessory):
@@ -28,6 +32,7 @@ class TemperatureSensor(Accessory):
         super().__init__(*args, **kwargs)
         self.temp = 0.0
         self.id = ''
+        self.timeout = False
 
         serv_temp = self.add_preload_service('TemperatureSensor')
         self.char_temp = serv_temp.configure_char('CurrentTemperature')
@@ -35,31 +40,67 @@ class TemperatureSensor(Accessory):
     def set_id(self, _id):
         self.id = _id
 
-    def current_temp(self):
-        _db = pickledb.load('data.db', False, True)
+    def current_temp(self, _db):
         access_data = _db.get(self.id)
-        self.temp = float(access_data['value'])
+        try:
+            self.temp = float(access_data['value'])
+        except Exception:
+            self.temp = -999.0
+            print('--- ! --- float(access_data[value] - is not float')
+
+    def _timeout(self, _db):
+        access_data = _db.get(self.id)
+        current_time = access_data['current_time']
+        timeout = access_data['timeout']
+
+        print(f'{int(current_time)} + {timeout} <= {int(time.time())}')
+        print(f'{int(current_time) + timeout} <= {int(time.time())}')
+
+        if (int(current_time) + timeout) <= int(time.time()):
+            access_data['active'] = 0
+            _db.set(self.id, access_data)
+            _db.rem(self.id)
+            _db.dump()
+            self.timeout = True
+            driver.stop()
+            os.system('python "Restart.py"')
+            time.sleep(1)
+            sys.exit(0)
 
     @Accessory.run_at_interval(3)
     async def run(self):
-        self.current_temp()
+        _db = pickledb.load('data.db', False, True)
+        self._timeout(_db)
+
+        # if self.timeout:
+        #     await self.stop()
+            # pid = PID.get('PID')
+            # print(pid)
+            # os.killpg(os.getpgid(pid), signal.SIGTERM)
+            # # os.execv(sys.executable, [sys.executable] + sys.argv)
+            # # print('--- ! --- RESTART IS NOT WORK --- ! ---')
+            # print('--- ! --- killpg IS NOT WORK --- ! ---')
+            # sys.exit(0)
+        # else:
+        self.current_temp(_db)
         self.char_temp.set_value(self.temp)
 
 
 def get_bridge(driver):
     """Call this method to get a Bridge instead of a standalone accessory."""
     bridge = Bridge(driver, 'Bridge')
+    db = pickledb.load('data.db', False, True)
 
-    keys = db.getall()
+    keys = list(db.getall())
 
     for key in keys:
-        temp_sensor = get_temp_sensor(driver, key)
+        temp_sensor = get_temp_sensor(driver, key, db)
         bridge.add_accessory(temp_sensor)
 
     return bridge
 
 
-def get_temp_sensor(driver, acc_id):
+def get_temp_sensor(driver, acc_id, db):
     access = TemperatureSensor(driver, db.get(acc_id)['name'])
     access.set_info_service(model=db.get(acc_id)['model'], serial_number=acc_id)
     access.set_id(_id=acc_id)
@@ -70,6 +111,10 @@ def get_accessory(driver):
     """Call this method to get a standalone Accessory."""
     return TemperatureSensor(driver, 'MyTempSensor')
 
+
+# PID = pickledb.load('pid.db', False, True)
+# PID.set('PID', os.getpid())
+# print('START hk ! pid:', os.getpid())
 
 # Start the accessory on port 51826
 driver = AccessoryDriver(port=51826)
