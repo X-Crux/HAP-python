@@ -40,18 +40,21 @@ def subscribe(client: mqtt_client):
         ids = list(db.getall())
         restart = False
         print('/ ' * 70)
+
         if id_access not in ids:
             restart = True
+
         print('id_access:', id_access)
         print('ids:', ids)
-        # for _id in ids:
-        #     access_data = db.get(_id)
-        #     print('access_data:', access_data)
-        #     if not access_data['active']:
-        #         print('--- ! --- Deleted:', _id)
-        #         db.rem(_id)
-        #         db.dump()
-        #         restart = True
+
+        for _id in ids:
+            access_data = db.get(_id)
+            print('access_data:', access_data)
+            if not access_data['active']:
+                print('--- ! --- Deleted:', _id)
+                db.rem(_id)
+                db.dump()
+                restart = True
 
         current_time = int(time.time())
         values = {'value': value_access,
@@ -62,11 +65,13 @@ def subscribe(client: mqtt_client):
                   'timeout': 80,
                   'active': 1}
 
-        db.set(id_access, values)
-        db.dump()
+        db_s = pickledb.load('data.db', False, True)
+        db_s.set(id_access, values)
+        db_s.dump()
 
+        db_x = pickledb.load('data.db', False, True)
         if restart:
-            if len(list(db.getall())) == 1:
+            if len(list(db_x.getall())) == 1:
                 t = threading.Thread(target=start_proc, args=())
                 t.start()
 

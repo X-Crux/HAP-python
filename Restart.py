@@ -1,10 +1,7 @@
 import os
 import time
 
-import pickledb
 
-PID = pickledb.load('pid.db', False, True)
-
+time.sleep(10)
 os.system('python "mqtt_sub.py"')
-time.sleep(1)
 quit()

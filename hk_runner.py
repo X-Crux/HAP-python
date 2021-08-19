@@ -59,38 +59,25 @@ class TemperatureSensor(Accessory):
         if (int(current_time) + timeout) <= int(time.time()):
             access_data['active'] = 0
             _db.set(self.id, access_data)
-            _db.rem(self.id)
             _db.dump()
             self.timeout = True
-            driver.stop()
-            os.system('python "Restart.py"')
-            time.sleep(1)
-            sys.exit(0)
 
     @Accessory.run_at_interval(3)
     async def run(self):
         _db = pickledb.load('data.db', False, True)
         self._timeout(_db)
 
-        # if self.timeout:
-        #     await self.stop()
-            # pid = PID.get('PID')
-            # print(pid)
-            # os.killpg(os.getpgid(pid), signal.SIGTERM)
-            # # os.execv(sys.executable, [sys.executable] + sys.argv)
-            # # print('--- ! --- RESTART IS NOT WORK --- ! ---')
-            # print('--- ! --- killpg IS NOT WORK --- ! ---')
-            # sys.exit(0)
-        # else:
-        self.current_temp(_db)
-        self.char_temp.set_value(self.temp)
+        if not self.timeout:
+            self.current_temp(_db)
+            self.char_temp.set_value(self.temp)
+        else:
+            pass
 
 
 def get_bridge(driver):
     """Call this method to get a Bridge instead of a standalone accessory."""
-    bridge = Bridge(driver, 'Bridge')
     db = pickledb.load('data.db', False, True)
-
+    bridge.stop()
     keys = list(db.getall())
 
     for key in keys:
@@ -112,12 +99,9 @@ def get_accessory(driver):
     return TemperatureSensor(driver, 'MyTempSensor')
 
 
-# PID = pickledb.load('pid.db', False, True)
-# PID.set('PID', os.getpid())
-# print('START hk ! pid:', os.getpid())
-
 # Start the accessory on port 51826
 driver = AccessoryDriver(port=51826)
+bridge = Bridge(driver, 'Bridge')
 
 # Change `get_accessory` to `get_bridge` if you want to run a Bridge.
 driver.add_accessory(accessory=get_bridge(driver))

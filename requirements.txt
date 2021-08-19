@@ -5,4 +5,5 @@ ifaddr==0.1.7
 paho-mqtt==1.5.1
 pickleDB==0.9.2
 pycparser==2.20
+toml==0.10.2
 zeroconf==0.35.0
