@@ -8,13 +8,14 @@ import signal
 import time
 import toml
 import pickledb
-
+from forms import convert
 from paho.mqtt import client as mqtt_client
 
 data = toml.load("data.toml")
 PID = pickledb.load('pid.db', False, True)
+# db = pickledb.load('data.db', False, True)
 logging.basicConfig(level=logging.DEBUG, format="[%(module)s] %(message)s")
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 broker = data['default']['broker']
@@ -23,64 +24,108 @@ topic = data['default']['topic']
 client_id = f'python-mqtt-{random.randint(0, 100)}'
 username = data['default']['username']
 password = data['default']['password']
-# PID = []
+# db = {}
 
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
         str_msg = msg.payload.decode()
         dict_msg = json.loads(str_msg)
-        type_access = dict_msg['dtype']
-        model_access = dict_msg['stype']
-        name_access = dict_msg['name']
-        id_access = dict_msg['id']
-        value_access = dict_msg['svalue1']
+        # type_access = dict_msg['dtype']
+        # model_access = dict_msg['stype']
+        # name_access = dict_msg['name']
+        # id_access = dict_msg['id']
+        # value_access = dict_msg['svalue1']
 
-        db = pickledb.load('data.db', False, True)
-        ids = list(db.getall())
-        restart = False
-        print('/ ' * 70)
+        dev_id, _form, _type = convert(dict_msg)
+        log.debug(f'Inner dev_id: {dev_id}')
+        log.debug(f'Inner _type: {_type}')
+        log.debug(f'Inner _form: {_form}')
 
-        if id_access not in ids:
-            restart = True
+        if dev_id:
+            db = pickledb.load('data.db', False, True)
+            ids = list(db.getall())
+            # ids = list(db.keys())
+            restart = False
+            log.debug('/ ' * 40)
 
-        print('id_access:', id_access)
-        print('ids:', ids)
-
-        for _id in ids:
-            access_data = db.get(_id)
-            print('access_data:', access_data)
-            if not access_data['active']:
-                print('--- ! --- Deleted:', _id)
-                db.rem(_id)
+            if dev_id not in ids:
+                # db[dev_id] = {_type: _form}
+                _form = {_type: _form}
+                db.set(dev_id, _form)
                 db.dump()
                 restart = True
-
-        current_time = int(time.time())
-        values = {'value': value_access,
-                  'type': type_access,
-                  'model': model_access,
-                  'name': name_access,
-                  'current_time': str(current_time),
-                  'timeout': 80,
-                  'active': 1}
-
-        db_s = pickledb.load('data.db', False, True)
-        db_s.set(id_access, values)
-        db_s.dump()
-
-        db_x = pickledb.load('data.db', False, True)
-        if restart:
-            if len(list(db_x.getall())) == 1:
-                t = threading.Thread(target=start_proc, args=())
-                t.start()
-
             else:
-                pid = PID.get('PID')
-                os.kill(pid, signal.SIGINT)
+                acc_data = db.get(dev_id)
+
+                if _type not in list(acc_data.keys()):
+                    restart = True
+
+                acc_data[_type] = _form
+                db.set(dev_id, acc_data)
+                db.dump()
+
+                # _form = {_type: _form}
+                # db[dev_id].update(_form)
+                # if _type not in list(db[dev_id].keys()):
+                #     db[dev_id][_type] = _form
+                #     restart = True
+
+            log.debug(f'dev_id: {dev_id}')
+            log.debug(f'ids: {ids}')
+
+            for _id in ids:
+                # acc_data = db[_id]
+                acc_data = db.get(_id)
+
+                for _type, _value in acc_data.items():
+
+                    if not _value['active']:
+                        log.debug(f'--- ! --- Deleted TYPE: {_id} {_type}')
+                        acc_data.pop(_type)
+                        # db[_id].pop(_type)
+                        # if len(db[_id]) == 0:
+
+                        if len(acc_data) == 0:
+                            log.debug(f'--- ! --- Deleted ID: {_id} {acc_data}')
+                            # log.debug(f'--- ! --- Deleted ID: {_id} {db[_id]}')
+                            # db.pop(_id)
+                            db.rem(_id)
+                            db.dump()
+
+                        else:
+                            db.set(_id, acc_data)
+                            db.dump()
+
+                        restart = True
+
+            # current_time = int(time.time())
+            # values = {'value': value_access,
+            #           'type': type_access,
+            #           'model': model_access,
+            #           'name': name_access,
+            #           'current_time': str(current_time),
+            #           'timeout': 80,
+            #           'active': 1}
+
+            # db_s = pickledb.load('data.db', False, True)
+            # db_s = db
+            # db_s.set(id_access, values)
+            # db_s.dump()
+
+            # db_x = pickledb.load('data.db', False, True)
+
+            if restart:
+                try:
+                    pid = PID.get('PID')
+                    if pid:
+                        os.kill(pid, signal.SIGINT)
+                except Exception:
+                    pass
                 t = threading.Thread(target=start_proc, args=())
                 t.start()
-        print('/ ' * 70)
+
+            log.debug('/ ' * 40)
 
     client.subscribe(topic)
     client.on_message = on_message
@@ -89,9 +134,9 @@ def subscribe(client: mqtt_client):
 def connect_mqtt() -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
-            print("Connected to MQTT Broker!")
+            log.info("Connected to MQTT Broker!")
         else:
-            print("Failed to connect, return code %d\n", rc)
+            log.error("Failed to connect, return code %d\n", rc)
 
     client = mqtt_client.Client(client_id)
     client.username_pw_set(username, password)
@@ -102,21 +147,19 @@ def connect_mqtt() -> mqtt_client:
 
 def start_proc():
     time.sleep(1)
-    process = subprocess.Popen(['python', 'hk_runner.py'])
+    process = subprocess.Popen(['python3', 'hk_runner.py'])
     PID.set('PID', process.pid)
     PID.dump()
-    # PID.append(process.pid)
 
 
 if __name__ == '__main__':
-    db = pickledb.load('data.db', False, True)
-    if len(list(db.getall())) != 0:
+    if len(db) != 0:
         try:
             pid = PID.get('PID')
-            os.kill(pid, signal.SIGINT)
+            if pid:
+                os.kill(pid, signal.SIGINT)
         except Exception:
             pass
-
         t = threading.Thread(target=start_proc, args=())
         t.start()
 
