@@ -100,6 +100,7 @@ class HumiditySensor(Accessory):
     def current_humidity(self, _db):
         # access_data = _db[self.id]['Humidity']
         access_data = _db.get(self.id)['Humidity']
+        log.debug(f'Humidity value: {access_data["value"]}')
         try:
             self.hum_level = float(access_data['value'])
         except Exception:

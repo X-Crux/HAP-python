@@ -44,7 +44,7 @@ def form(acc_info):
         'model': acc_info['stype'],
         'value': acc_info['svalue1'],
         'current_time': str(current_time),
-        'timeout': 80,
+        'timeout': 1800,  # 30 минут
         'active': 1
     }
     return _form

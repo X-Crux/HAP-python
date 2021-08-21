@@ -82,19 +82,20 @@ def subscribe(client: mqtt_client):
 
                     if not _value['active']:
                         log.debug(f'--- ! --- Deleted TYPE: {_id} {_type}')
-                        acc_data.pop(_type)
+                        new_data = acc_data
+                        new_data.pop(_type)
                         # db[_id].pop(_type)
                         # if len(db[_id]) == 0:
 
-                        if len(acc_data) == 0:
-                            log.debug(f'--- ! --- Deleted ID: {_id} {acc_data}')
+                        if len(new_data) == 0:
+                            log.debug(f'--- ! --- Deleted ID: {_id} {new_data}')
                             # log.debug(f'--- ! --- Deleted ID: {_id} {db[_id]}')
                             # db.pop(_id)
                             db.rem(_id)
                             db.dump()
 
                         else:
-                            db.set(_id, acc_data)
+                            db.set(_id, new_data)
                             db.dump()
 
                         restart = True
@@ -153,7 +154,8 @@ def start_proc():
 
 
 if __name__ == '__main__':
-    if len(db) != 0:
+    db = pickledb.load('data.db', False, True)
+    if len(list(db.getall())) != 0:
         try:
             pid = PID.get('PID')
             if pid:
