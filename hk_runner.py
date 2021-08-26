@@ -39,7 +39,6 @@ class TemperatureSensor(Accessory):
         self.id = _id
 
     def current_temp(self, _db):
-        # access_data = _db[self.id]['Temp']
         access_data = _db.get(self.id)['Temp']
         try:
             self.temp = float(access_data['value'])
@@ -49,7 +48,6 @@ class TemperatureSensor(Accessory):
 
     def _timeout(self, _db):
         access_data = _db.get(self.id)['Temp']
-        # access_data = _db[self.id]['Temp']
         current_time = access_data['current_time']
         timeout = access_data['timeout']
 
@@ -67,16 +65,12 @@ class TemperatureSensor(Accessory):
     @Accessory.run_at_interval(3)
     async def run(self):
         _db = pickledb.load('data.db', False, True)
-        # from mqtt_sub import db
-        # self._timeout(db)
         self._timeout(_db)
 
         if not self.timeout:
-            # self.current_temp(db)
             self.current_temp(_db)
             self.char_temp.set_value(self.temp)
         else:
-            # db[self.id]['Temp']['active'] = 0
             pass
 
 
@@ -98,7 +92,6 @@ class HumiditySensor(Accessory):
         self.id = _id
 
     def current_humidity(self, _db):
-        # access_data = _db[self.id]['Humidity']
         access_data = _db.get(self.id)['Humidity']
         log.debug(f'Humidity value: {access_data["value"]}')
         try:
@@ -109,7 +102,6 @@ class HumiditySensor(Accessory):
 
     def _timeout(self, _db):
         access_data = _db.get(self.id)['Humidity']
-        # access_data = _db[self.id]['Humidity']
         current_time = access_data['current_time']
         timeout = access_data['timeout']
 
@@ -117,9 +109,6 @@ class HumiditySensor(Accessory):
         log.debug(f'{int(current_time) + timeout} <= {int(time.time())}')
 
         if (int(current_time) + timeout) <= int(time.time()):
-            # access_data['active'] = 0
-            # _db.set(self.id, access_data)
-            # _db.dump()
             access_data['active'] = 0
             db_device = _db.get(self.id)
             db_device['Humidity'] = access_data
@@ -130,31 +119,21 @@ class HumiditySensor(Accessory):
     @Accessory.run_at_interval(3)
     async def run(self):
         _db = pickledb.load('data.db', False, True)
-        # from mqtt_sub import db
-        # self._timeout(db)
         self._timeout(_db)
 
         if not self.timeout:
-            # self.current_humidity(db)
             self.current_humidity(_db)
             self.char_level.set_value(self.hum_level)
         else:
-            # db[self.id]['Humidity']['active'] = 0
             pass
 
 
 def get_bridge(driver):
     """Call this method to get a Bridge instead of a standalone accessory."""
-    # from mqtt_sub import db
-    # log.debug('-  ' * 35)
-    # log.debug(f'DB after import from mqtt_sub: {db}')
-    # log.debug('- ' * 35)
-    # keys = list(db.keys())
     db = pickledb.load('data.db', False, True)
     keys = list(db.getall())
 
     for key in keys:
-        # for _type, _value in db[key].items():
         for _type, _value in db.get(key).items():
             log.debug('>  ' * 35)
             log.debug(f'Acc to add: {key}, {_type}, {_value}')
@@ -173,8 +152,6 @@ def get_temp_sensor(driver, acc_id, db):
     name = db.get(acc_id)['Temp']['name']
     model = db.get(acc_id)['Temp']['model']
     access = TemperatureSensor(driver, name)
-    # access = TemperatureSensor(driver, db[acc_id]['Temp']['name'])
-    # access.set_info_service(model=db[acc_id]['Temp']['model'], serial_number=acc_id)
     access.set_info_service(model=model, serial_number=acc_id)
     access.set_id(_id=acc_id)
     return access
@@ -184,8 +161,6 @@ def get_humidity_sensor(driver, acc_id, db):
     name = db.get(acc_id)['Humidity']['name']
     model = db.get(acc_id)['Humidity']['model']
     access = HumiditySensor(driver, name)
-    # access = HumiditySensor(driver, db[acc_id]['Humidity']['name'])
-    # access.set_info_service(model=db[acc_id]['Humidity']['model'], serial_number=acc_id)
     access.set_info_service(model=model, serial_number=acc_id)
     access.set_id(_id=acc_id)
     return access

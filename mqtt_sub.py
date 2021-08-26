@@ -18,12 +18,12 @@ logging.basicConfig(level=logging.DEBUG, format="[%(module)s] %(message)s")
 log = logging.getLogger(__name__)
 
 
-broker = data['default']['broker']
-port = data['default']['port']
-topic = data['default']['topic']
+broker = data['mqtt']['broker']
+port = data['mqtt']['port']
+topic = data['mqtt']['topic']
 client_id = f'python-mqtt-{random.randint(0, 100)}'
-username = data['default']['username']
-password = data['default']['password']
+username = data['mqtt']['username']
+password = data['mqtt']['password']
 # db = {}
 
 
