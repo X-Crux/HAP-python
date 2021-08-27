@@ -1,19 +1,10 @@
 import requests
-import json
 from forms import convert_dom
 
 
 def get_response(url, log):
     headers = {'Content-Type': 'application/json'}
     session = requests.Session()
-
-    # response = session.request(
-    #     method='POST',
-    #     url=url,
-    #     json=data,
-    #     headers=headers,
-    #     timeout=8
-    # )
 
     response = session.request(
         method='GET',

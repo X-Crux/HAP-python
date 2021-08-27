@@ -1,23 +1,17 @@
 import json
 import logging
-import os
 import random
-import subprocess
-import threading
 import signal
-import time
 import toml
-import pickledb
 from forms import convert
 from paho.mqtt import client as mqtt_client
 from pyhap.accessory import Accessory, Bridge
 from pyhap.accessory_driver import AccessoryDriver
-from pyhap.const import CATEGORY_SENSOR, CATEGORY_HUMIDIFIER
+from pyhap.const import CATEGORY_SENSOR
 from domoticz import fresh_list, acc_data
+from multiprocessing import Process
 
 data = toml.load("data.toml")
-# PID = pickledb.load('pid.db', False, True)
-# db = pickledb.load('data.db', False, True)
 logging.basicConfig(level=logging.DEBUG, format="[%(module)s] %(message)s")
 log = logging.getLogger(__name__)
 
@@ -102,7 +96,7 @@ class TemperatureSensor(Accessory):
 class HumiditySensor(Accessory):
     """Fake Humidity sensor."""
 
-    category = CATEGORY_HUMIDIFIER
+    category = CATEGORY_SENSOR
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -129,10 +123,9 @@ class HumiditySensor(Accessory):
         self.char_level.set_value(self.hum_level)
 
 
-def get_bridge(driver):
+def get_bridge(driver, idxes_list):
     """Call this method to get a Bridge instead of a standalone accessory."""
     _url = data['domoticz']['url']
-    idxes_list = fresh_list(_url, log)
     ids_list = []
     acc_current = {}
 
@@ -192,10 +185,12 @@ def start_proc():
     subscribe(client)
 
     client.loop_forever()
+    client.loop_stop()
 
 
-if __name__ == '__main__':
-    t = threading.Thread(target=start_proc, args=())
+# if __name__ == '__main__':
+def start_hk(idxes_list):
+    t = Process(target=start_proc, args=(), daemon=True)
     t.start()
 
     # Start the accessory on port 51826
@@ -207,7 +202,7 @@ if __name__ == '__main__':
         pass
 
     # Change `get_accessory` to `get_bridge` if you want to run a Bridge.
-    driver.add_accessory(accessory=get_bridge(driver))
+    driver.add_accessory(accessory=get_bridge(driver, idxes_list))
 
     # We want SIGTERM (terminate) to be handled by the driver itself,
     # so that it can gracefully stop the accessory, server and advertising.
@@ -216,3 +211,4 @@ if __name__ == '__main__':
 
     # Start it!
     driver.start()
+    t.terminate()
