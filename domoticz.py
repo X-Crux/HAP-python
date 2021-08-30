@@ -21,7 +21,7 @@ def get_response(url, log):
 def acc_data(_url, idx, log):
     url = f'http://{_url}/json.htm?type=devices&rid={idx}'
     acc_info = get_response(url, log)['result'][0]
-    _id, _form, _type = convert_dom(acc_info)
+    _id, _form, _type = convert_dom(acc_info, idx)
     return _id, _form, _type
 
 

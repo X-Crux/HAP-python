@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import logging
@@ -40,6 +41,13 @@ def start():
                 except Exception:
                     t.kill()
                     log.debug("Process is killing success")
+                # finally:
+                #     try:
+                #         os.unlink('accessory.state')
+                #     except Exception:
+                #         with open('accessory.state', 'r', encoding='utf-8') as f:
+                #             f.read()
+                #         os.unlink('accessory.state')
 
             t = Process(target=start_hk, args=(idxes_list,))
             t.start()

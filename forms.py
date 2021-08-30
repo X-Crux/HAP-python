@@ -64,8 +64,9 @@ def _value(data, _type):
     return float(value)
 
 
-def form_dom(acc_info):
+def form_dom(acc_info, idx):
     _form = {
+        'idx': idx,
         'name': acc_info['Name'],
         'type': acc_info['Type'],
         'model': acc_info['SubType'],
@@ -74,12 +75,12 @@ def form_dom(acc_info):
     return _form
 
 
-def convert_dom(dev_data):
+def convert_dom(dev_data, idx):
     dev_id = dev_data['ID']
     _type = dev_data['Type']
 
     if _type in ['Temp', 'Humidity']:
-        _form = form_dom(dev_data)
+        _form = form_dom(dev_data, idx)
         return dev_id, _form, _type
     else:
         return None, None, None

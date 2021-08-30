@@ -64,7 +64,7 @@ def connect_mqtt() -> mqtt_client:
 
 
 class TemperatureSensor(Accessory):
-    """Fake Temperature sensor."""
+    """Temperature sensor."""
 
     category = CATEGORY_SENSOR
 
@@ -94,7 +94,7 @@ class TemperatureSensor(Accessory):
 
 
 class HumiditySensor(Accessory):
-    """Fake Humidity sensor."""
+    """Humidity sensor."""
 
     category = CATEGORY_SENSOR
 
@@ -139,11 +139,14 @@ def get_bridge(driver, idxes_list):
 
     bridge = Bridge(driver, 'Bridge')
 
+    log.debug("* " * 40)
+    log.debug(acc_current)
+    log.debug("* " * 40)
     for key in ids_list:
         log.debug(f"Add accessory id: {key}")
         for _type, _value in acc_current[key].items():
             log.debug('>  ' * 35)
-            log.debug(f'Acc to add: {key}, {_type}, {_value}')
+            log.debug(f'Acc to add (idx {_value["idx"]}): {key}, {_type}, {_value}')
             log.debug('>  ' * 35)
             if _type == 'Temp':
                 temp_sensor = get_temp_sensor(driver, key, acc_current)
@@ -158,8 +161,9 @@ def get_bridge(driver, idxes_list):
 def get_temp_sensor(driver, acc_id, acc_current):
     name = acc_current[acc_id]['Temp']['name']
     model = acc_current[acc_id]['Temp']['model']
+    serial_number = acc_current[acc_id]['Temp']['idx']
     access = TemperatureSensor(driver, name)
-    access.set_info_service(model=model, serial_number=acc_id)
+    access.set_info_service(model=model, serial_number=serial_number)
     access.current_temp(acc_current[acc_id]['Temp']['value'])
     access.set_id(_id=acc_id)
     return access
@@ -168,8 +172,9 @@ def get_temp_sensor(driver, acc_id, acc_current):
 def get_humidity_sensor(driver, acc_id, acc_current):
     name = acc_current[acc_id]['Humidity']['name']
     model = acc_current[acc_id]['Humidity']['model']
+    serial_number = acc_current[acc_id]['Humidity']['idx']
     access = HumiditySensor(driver, name)
-    access.set_info_service(model=model, serial_number=acc_id)
+    access.set_info_service(model=model, serial_number=serial_number)
     access.current_humidity(acc_current[acc_id]['Humidity']['value'])
     access.set_id(_id=acc_id)
     return access
