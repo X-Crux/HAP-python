@@ -37,17 +37,20 @@ def start():
             if t.is_alive():
                 try:
                     t.terminate()
+                    time.sleep(1)
                     log.debug("Process is terminating success")
                 except Exception:
                     t.kill()
                     log.debug("Process is killing success")
                 # finally:
                 #     try:
+                #         with open('temp.txt', 'w', encoding='utf-8') as w:
+                #             with open('accessory.state', 'r', encoding='utf-8') as r:
+                #                 w.write(r.read())
                 #         os.unlink('accessory.state')
+                #         log.debug("'accessory.state' is removed")
                 #     except Exception:
-                #         with open('accessory.state', 'r', encoding='utf-8') as f:
-                #             f.read()
-                #         os.unlink('accessory.state')
+                #         log.debug("'accessory.state' is not removed")
 
             t = Process(target=start_hk, args=(idxes_list,))
             t.start()

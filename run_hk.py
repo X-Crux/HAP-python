@@ -1,7 +1,10 @@
 import json
 import logging
+import os
 import random
 import signal
+import time
+
 import toml
 from forms import convert
 from paho.mqtt import client as mqtt_client
@@ -198,13 +201,18 @@ def start_hk(idxes_list):
     t = Process(target=start_proc, args=(), daemon=True)
     t.start()
 
-    # Start the accessory on port 51826
-    driver = AccessoryDriver(port=51826)
+    # try:
+    #     with open('accessory.state', 'w', encoding='utf-8') as w:
+    #         with open('temp.txt', 'r', encoding='utf-8') as r:
+    #             w.write(r.read())
+    #     os.unlink('temp.txt')
+    #     log.debug("'temp.txt' is removed")
+    # except Exception:
+    #     os.unlink('accessory.state')
+    #     log.debug("'temp.txt' is not removed")
 
-    try:
-        driver.accessory.clear()
-    except Exception:
-        pass
+    # Start the accessory on port 51826
+    driver = AccessoryDriver(port=51826, persist_file='accessory.state')
 
     # Change `get_accessory` to `get_bridge` if you want to run a Bridge.
     driver.add_accessory(accessory=get_bridge(driver, idxes_list))
@@ -216,4 +224,17 @@ def start_hk(idxes_list):
 
     # Start it!
     driver.start()
+
+    # uuid = ''
+    # with open('accessory.state', 'r', encoding='utf-8') as r:
+    #     r = r.read()
+    #     r_dict = json.loads(r)
+    #     # r_dict = json.dumps(r)
+    #     for key in r_dict['paired_clients'].keys():
+    #         uuid = key
+    # driver.unpair(uuid)
+    # time.sleep(1)
+    # log.debug("Pair is unpaired")
+    #
+    # driver.stop()
     t.terminate()
