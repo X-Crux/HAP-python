@@ -126,7 +126,7 @@ class HumiditySensor(Accessory):
         self.char_level.set_value(self.hum_level)
 
 
-def get_bridge(driver, idxes_list):
+def get_bridge(bridge, driver, idxes_list):
     """Call this method to get a Bridge instead of a standalone accessory."""
     _url = data['domoticz']['url']
     ids_list = []
@@ -140,7 +140,7 @@ def get_bridge(driver, idxes_list):
         ids_list.append(acc_id)
         acc_current.update(full_acc)
 
-    bridge = Bridge(driver, 'Bridge')
+    # bridge = Bridge(driver, 'Bridge')
 
     log.debug("* " * 40)
     log.debug(acc_current)
@@ -213,9 +213,10 @@ def start_hk(idxes_list):
 
     # Start the accessory on port 51826
     driver = AccessoryDriver(port=51826, persist_file='accessory.state')
+    bridge = Bridge(driver, 'Bridge')
 
     # Change `get_accessory` to `get_bridge` if you want to run a Bridge.
-    driver.add_accessory(accessory=get_bridge(driver, idxes_list))
+    driver.add_accessory(accessory=get_bridge(bridge, driver, idxes_list))
 
     # We want SIGTERM (terminate) to be handled by the driver itself,
     # so that it can gracefully stop the accessory, server and advertising.
@@ -237,4 +238,14 @@ def start_hk(idxes_list):
     # log.debug("Pair is unpaired")
     #
     # driver.stop()
+    log.debug(f"accessory_id values : > > {bridge.accessories.values()}")
+    for aid, accessory in bridge.accessories.items():
+        print(f'{aid} | {accessory}')
+
+    bridge.accessories.pop(3)
+    bridge.accessories.pop(4)
+    bridge.driver.config_changed()
+    # driver.config_changed()
+    log.debug(f"accessory_id items : > > {bridge.accessories.items()}")
+
     t.terminate()

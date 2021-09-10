@@ -55,7 +55,7 @@ def start():
             t = Process(target=start_hk, args=(idxes_list,))
             t.start()
 
-        time.sleep(30)
+        time.sleep(50)
 
 
 if __name__ == '__main__':
