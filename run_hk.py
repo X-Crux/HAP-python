@@ -9,7 +9,6 @@ import toml
 from forms import convert
 from paho.mqtt import client as mqtt_client
 from pyhap.accessory import Accessory, Bridge
-from pyhap.accessory_driver import AccessoryDriver
 from pyhap.const import CATEGORY_SENSOR
 from domoticz import fresh_list, acc_data
 from multiprocessing import Process
@@ -197,7 +196,7 @@ def start_proc():
 
 
 # if __name__ == '__main__':
-def start_hk(idxes_list):
+def start_hk(idxes_list, bridge, driver):
     t = Process(target=start_proc, args=(), daemon=True)
     t.start()
 
@@ -212,8 +211,6 @@ def start_hk(idxes_list):
     #     log.debug("'temp.txt' is not removed")
 
     # Start the accessory on port 51826
-    driver = AccessoryDriver(port=51826, persist_file='accessory.state')
-    bridge = Bridge(driver, 'Bridge')
 
     # Change `get_accessory` to `get_bridge` if you want to run a Bridge.
     driver.add_accessory(accessory=get_bridge(bridge, driver, idxes_list))
@@ -238,14 +235,5 @@ def start_hk(idxes_list):
     # log.debug("Pair is unpaired")
     #
     # driver.stop()
-    log.debug(f"accessory_id values : > > {bridge.accessories.values()}")
-    for aid, accessory in bridge.accessories.items():
-        print(f'{aid} | {accessory}')
-
-    bridge.accessories.pop(3)
-    bridge.accessories.pop(4)
-    bridge.driver.config_changed()
-    # driver.config_changed()
-    log.debug(f"accessory_id items : > > {bridge.accessories.items()}")
 
     t.terminate()

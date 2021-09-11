@@ -81,6 +81,8 @@ class HAPServerProtocol(asyncio.Protocol):
 
     def write(self, data: bytes) -> None:
         """Write data to the client."""
+        logger.debug(type(data))
+        logger.debug(data)
         self.last_activity = time.time()
         if self.hap_crypto:
             result = self.hap_crypto.encrypt(data)

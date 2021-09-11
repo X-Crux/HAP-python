@@ -22,6 +22,16 @@ def acc_data(_url, idx, log):
     url = f'http://{_url}/json.htm?type=devices&rid={idx}'
     acc_info = get_response(url, log)['result'][0]
     _id, _form, _type = convert_dom(acc_info, idx)
+
+    # [_id][_type][_form]
+    # _form = {
+    #     'idx': idx,
+    #     'name': acc_info['Name'],
+    #     'type': acc_info['Type'],
+    #     'model': acc_info['SubType'],
+    #     'value': _value(acc_info['Data'], acc_info['Type'])
+    # }
+
     return _id, _form, _type
 
 
