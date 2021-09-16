@@ -26,9 +26,9 @@ client_id = f'python-mqtt-{random.randint(0, 100)}'
 username = data['mqtt']['username']
 password = data['mqtt']['password']
 db = {}
-aid_db = {}
+# aid_db = {}
 idxes_list = []
-idxes_rem = []
+# idxes_rem = []
 
 
 def subscribe(client: mqtt_client):
@@ -129,7 +129,7 @@ class HumiditySensor(Accessory):
         self.char_level.set_value(self.hum_level)
 
 
-def get_bridge(bridge, driver, idxes_list):
+def get_bridge(driver, bridge):
     """Call this method to get a Bridge instead of a standalone accessory."""
     _url = data['domoticz']['url']
     ids_list = []
@@ -161,15 +161,15 @@ def get_bridge(bridge, driver, idxes_list):
                 humidity_sensor = get_humidity_sensor(driver, key, acc_current)
                 bridge.add_accessory(humidity_sensor)
 
-    for aid, acc_value in bridge.accessories.items():
-        print(f'{aid} | {acc_value} | {acc_value.display_name}')
-        for _type in acc_current.values():
-
-            for sens in _type.values():
-
-                if acc_value.display_name == sens['name']:
-                    acc = {str(sens['idx']): {"aid": aid, "name": acc_value.display_name}}
-                    aid_db.update(acc)
+    # for aid, acc_value in bridge.accessories.items():
+    #     print(f'{aid} | {acc_value} | {acc_value.display_name}')
+    #     for _type in acc_current.values():
+    #
+    #         for sens in _type.values():
+    #
+    #             if acc_value.display_name == sens['name']:
+    #                 acc = {str(sens['idx']): {"aid": aid, "name": acc_value.display_name}}
+    #                 aid_db.update(acc)
 
     return bridge
 
@@ -218,7 +218,8 @@ def start_hk():
     bridge = Bridge(driver, 'Bridge')
 
     # Change `get_accessory` to `get_bridge` if you want to run a Bridge.
-    driver.add_accessory(accessory=get_bridge(bridge, driver, idxes_list))
+    driver.add_accessory(accessory=get_bridge(driver, bridge))
+    driver.accessory
 
     # We want SIGTERM (terminate) to be handled by the driver itself,
     # so that it can gracefully stop the accessory, server and advertising.
@@ -229,25 +230,40 @@ def start_hk():
 
     log.debug(
         f"accessory_id values !!!: > > {bridge.accessories.values()}")
+
+    # accessories = bridge.accessories
+
+    aids = []
     for aid, accessory in bridge.accessories.items():
+        aids.append(aid)
         print(f'{aid} | {accessory}')
+
+    for aid in aids:
+        bridge.accessories[aid].services.clear()
+        bridge.accessories.pop(aid)
+
+    bridge.driver.config_changed()
+    driver.accessory = None
+    driver.config_changed()
     # aid => accessory.display_name
     # idx => name => aid
     # db = {"1": {"aid": 1, "name": "name_123"}}
 
-    global idxes_rem
-    for idx, value in aid_db.items():
-        aid = int(value['aid'])
+    # bridge.accessories.clear()
 
-        for _idx in idxes_rem:
+    # global idxes_rem
+    # for idx, value in aid_db.items():
+    #     aid = int(value['aid'])
+    #
+    #     for _idx in idxes_rem:
+    #
+    #         if _idx == idx:
+    #             bridge.accessories.pop(aid)
 
-            if _idx == idx:
-                bridge.accessories.pop(aid)
 
-    bridge.driver.config_changed()
-    log.debug(f"accessory_id items : > > {bridge.accessories.items()}")
+    # log.debug(f"accessory_id items : > > {bridge.accessories.items()}")
 
-    idxes_rem.clear()
+    # idxes_rem.clear()
     mqtt_proc.terminate()
 
 
@@ -269,10 +285,15 @@ def start():
         for idx in idxes_list:
             if idx not in idxes_temp:
                 restart = True
-                idxes_rem.append(idx)
+                # idxes_rem.append(idx)
 
         if restart:
             idxes_list = idxes_temp
+
+
+            # driver.accessory = None
+            # driver.config_changed()
+            # driver.stop()
 
             if hk_proc.is_alive():
                 try:

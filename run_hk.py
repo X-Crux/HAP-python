@@ -168,6 +168,7 @@ def get_temp_sensor(driver, acc_id, acc_current):
     access.set_info_service(model=model, serial_number=serial_number)
     access.current_temp(acc_current[acc_id]['Temp']['value'])
     access.set_id(_id=acc_id)
+    # access.services.clear()
     return access
 
 
